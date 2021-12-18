@@ -37,7 +37,7 @@ local CURLOPT_HTTPHEADER = 10000 + 23
 local CURLINFO_RESPONSE_CODE = 0x200000 + 2
 
 local function strerror(err)
-    return ffi.string(libcurl.curl_easy_strerror(err))
+	return ffi.string(libcurl.curl_easy_strerror(err))
 end
 
 -- response
@@ -45,14 +45,14 @@ local response = {}
 response.__index = response
 
 function response:json()
-    return json.decode(self.body)
+	return json.decode(self.body)
 end
 
 function response.new(body, code)
-    local self = {}
-    self.body = body
-    self.code = code
-    return setmetatable(self, response)
+	local self = {}
+	self.body = body
+	self.code = code
+	return setmetatable(self, response)
 end
 
 -- headers
@@ -60,117 +60,134 @@ local headers = {}
 headers.__index = headers
 
 function headers.new(t)
-    local self = {}
-    self.slist = nil
-    setmetatable(self, headers)
+	local self = {}
+	self.slist = nil
+	setmetatable(self, headers)
 
-    if type(t) == "table" then
-        for i, v in ipairs(t) do
-            self:push(v)
-        end
-    end
+	if type(t) == "table" then
+		for i, v in ipairs(t) do
+			self:push(v)
+		end
+	end
 
-    return self
+	return self
 end
 
 function headers:push(h)
-    self.slist = libcurl.curl_slist_append(self.slist, ffi.cast("const char *", h))
-    return self
+	self.slist = libcurl.curl_slist_append(
+		self.slist,
+		ffi.cast("const char *", h)
+	)
+	return self
 end
 
 function headers:free()
-    libcurl.curl_slist_free_all(self.slist);
+	libcurl.curl_slist_free_all(self.slist)
 end
 
 local curl = {}
 curl.__index = curl
 
 function curl.new()
-    local obj = {}
-    obj.handle = libcurl.curl_easy_init()
-    obj.result = ""
+	local obj = {}
+	obj.handle = libcurl.curl_easy_init()
+	obj.result = ""
 
-    local cb = ffi.cast("curl_write_callback", function(cbuffer, cs, cnitems, cout)
-        local rsize = tonumber(cs * cnitems)
+	local cb = ffi.cast(
+		"curl_write_callback",
+		function(cbuffer, cs, cnitems, cout)
+			local rsize = tonumber(cs * cnitems)
 
-        obj.result = obj.result .. ffi.string(cbuffer):sub(1, rsize)
-        return rsize
-    end)
+			obj.result = obj.result .. ffi.string(cbuffer):sub(1, rsize)
+			return rsize
+		end
+	)
 
-    libcurl.curl_easy_setopt(obj.handle, CURLOPT_WRITEFUNCTION, cb)
+	libcurl.curl_easy_setopt(obj.handle, CURLOPT_WRITEFUNCTION, cb)
 
-    return setmetatable(obj, curl)
+	return setmetatable(obj, curl)
 end
 
 function curl:_perform()
-    if self.headers then
-        libcurl.curl_easy_setopt(self.handle, CURLOPT_HTTPHEADER, self.headers.slist);
-    end
+	if self.headers then
+		libcurl.curl_easy_setopt(
+			self.handle,
+			CURLOPT_HTTPHEADER,
+			self.headers.slist
+		)
+	end
 
-    local res = libcurl.curl_easy_perform(self.handle)
-    if res ~= 0 then
-        local s = strerror(res)
-        self.headers:free()
-        libcurl.curl_easy_cleanup(self.handle)
-        return nil, s
-    end
-    if self.headers then
-        self.headers:free()
-    end
-    local code = ffi.new("long[1]", {})
-    libcurl.curl_easy_getinfo(self.handle, CURLINFO_RESPONSE_CODE, code)
-    libcurl.curl_easy_cleanup(self.handle)
-    local res = response.new(self.result, tonumber(code[0]))
-    return res, nil
+	local res = libcurl.curl_easy_perform(self.handle)
+	if res ~= 0 then
+		local s = strerror(res)
+		self.headers:free()
+		libcurl.curl_easy_cleanup(self.handle)
+		return nil, s
+	end
+	if self.headers then
+		self.headers:free()
+	end
+	local code = ffi.new("long[1]", {})
+	libcurl.curl_easy_getinfo(self.handle, CURLINFO_RESPONSE_CODE, code)
+	libcurl.curl_easy_cleanup(self.handle)
+	local res = response.new(self.result, tonumber(code[0]))
+	return res, nil
 end
 
 function curl:get(url, hs)
-    libcurl.curl_easy_setopt(self.handle, CURLOPT_URL, ffi.cast("const char *", url))
-    libcurl.curl_easy_setopt(self.handle, CURLOPT_HTTPGET, 1)
+	libcurl.curl_easy_setopt(
+		self.handle,
+		CURLOPT_URL,
+		ffi.cast("const char *", url)
+	)
+	libcurl.curl_easy_setopt(self.handle, CURLOPT_HTTPGET, 1)
 
-    self.headers = type(hs) == "table" and headers.new(hs) or nil
+	self.headers = type(hs) == "table" and headers.new(hs) or nil
 
-    return self:_perform()
+	return self:_perform()
 end
 
 function curl:post(url, data, hs)
-    libcurl.curl_easy_setopt(self.handle, CURLOPT_URL, ffi.cast("const char *", url))
-    libcurl.curl_easy_setopt(self.handle, CURLOPT_HTTPPOST, 1)
-    self.headers = type(hs) == "table" and headers.new(hs) or headers.new()
+	libcurl.curl_easy_setopt(
+		self.handle,
+		CURLOPT_URL,
+		ffi.cast("const char *", url)
+	)
+	libcurl.curl_easy_setopt(self.handle, CURLOPT_HTTPPOST, 1)
+	self.headers = type(hs) == "table" and headers.new(hs) or headers.new()
 
-    if type(data) == "table" then
-        data = json.encode(data)
-        self.headers:push("Accept: application/json")
-        self.headers:push("Content-Type: application/json")
-    end
+	if type(data) == "table" then
+		data = json.encode(data)
+		self.headers:push "Accept: application/json"
+		self.headers:push "Content-Type: application/json"
+	end
 
-    libcurl.curl_easy_setopt(self.handle, CURLOPT_POSTFIELDS, data);
+	libcurl.curl_easy_setopt(self.handle, CURLOPT_POSTFIELDS, data)
 
-    return self:_perform()
+	return self:_perform()
 end
 
 function http.get(...)
-    return curl.new():get(...)
+	return curl.new():get(...)
 end
 
 function http.post(...)
-    return curl.new():post(...)
+	return curl.new():post(...)
 end
 
 function http.test()
-    local res = http.post("https://httpbin.org/post", {
-        data = "test",
-        owo = "whats this"
-    })
+	local res = http.post("https://httpbin.org/post", {
+		data = "test",
+		owo = "whats this",
+	})
 
-    for k, v in pairs(res:json().json) do
-        print(k, "=", v)
-    end
-    --[[
+	for k, v in pairs(res:json().json) do
+		print(k, "=", v)
+	end
+	--[[
         data    =   test
         owo     =   whats this
     ]]
-
 end
 
 return http
