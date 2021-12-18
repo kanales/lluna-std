@@ -38,6 +38,7 @@ local FILE_EXISTS = 17
 local PERMISSION_DENIED = 13
 
 function path.pwd()
+  -- TODO test 
 	local size = MAXPATH
 	while true do
 		local buf = ffi.new("char[?]", size)
@@ -53,6 +54,7 @@ function path.pwd()
 end
 
 function path:mkdir(mode)
+  -- TODO test
 	for i = 1, #self do
 		local p = table.concat(self, SEP, 1, i)
 		local ok = C.mkdir(p, mode or 509)
