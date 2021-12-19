@@ -5,8 +5,10 @@ LDFLAGS = -lluajit
 SO_FILES = $(patsub %.so,c/$.)
 
 .PHONY: all clean
-all: c/termios.so c/curl.so
+all: c/termios.so c/curl.so c/shutil.so
 
+c/shutil.so: src/lua_shutil.o
+	$(CC) $(LDFLAGS) --shared -fPIC -o $@ $^
 c/curl.so: src/lua_curl.o
 	$(CC) $(LDFLAGS) --shared -lcurl -fPIC -o $@ $^
 c/termios.so: src/lua_termios.o

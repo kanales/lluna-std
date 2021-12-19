@@ -10,6 +10,7 @@ struct response {
   int code;
   size_t size;
 };
+
 typedef struct response response_t;
 response_t *response_new(lua_State *L) {
   response_t *self = (response_t *)lua_newuserdata(L, sizeof(struct response));
