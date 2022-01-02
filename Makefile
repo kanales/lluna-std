@@ -6,7 +6,7 @@ LUA_JIT_INCLUDE =	/usr/local/include/luajit-2.0/
 LUA_JIT_LIB    	= /usr/local/Cellar/luajit/2.0.5/lib
 CFLAGS					= -Wall -I$(LUA_JIT_INCLUDE)
 LDFLAGS 				= -L$(LUA_JIT_LIB)
-LDLIBS 					= 
+LDLIBS 					= -lluajit
 PREFIX 					= $(HOME)/.local
 
 .PHONY: all clean install
