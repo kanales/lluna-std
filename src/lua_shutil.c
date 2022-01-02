@@ -4,7 +4,28 @@
 #include <luajit.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <time.h>
 #include <unistd.h>
+
+int lua_stat(lua_State *L) {
+  const char *path = luaL_checkstring(L, 1);
+  struct stat sb;
+  if (stat(path, &sb) == -1) {
+    luaL_error(L, strerror(errno));
+    return 0;
+  }
+
+  lua_newtable(L);
+  lua_pushinteger(L, sb.st_atimespec.tv_sec);
+  lua_setfield(L, -2, "atim");
+  lua_pushinteger(L, sb.st_mtimespec.tv_sec);
+  lua_setfield(L, -2, "mtim");
+  lua_pushinteger(L, sb.st_ctimespec.tv_sec);
+  lua_setfield(L, -2, "ctim");
+  // TODO the rest of the owl
+
+  return 1;
+}
 
 int lua_rmdir(lua_State *L) {
   const char *path = luaL_checkstring(L, 1);
@@ -74,13 +95,6 @@ int iterdir(lua_State *L) {
   return 1;
 }
 
-struct lua_reg {
-  const char *name;
-  lua_CFunction func;
-};
-static const struct lua_reg registry[] = {
-    {"mkdir", lua_mkdir}, {"cwd", lua_cwd}, {"dir", iterdir}, {NULL, NULL}};
-
 int dir_iterator__next(lua_State *L) {
   dir_iterator *self = lua_touserdata(L, 1);
   struct dirent *dp;
@@ -121,18 +135,21 @@ int dir_iterator_meta(lua_State *L) {
   return 1;
 }
 
+#define SHUTIL_FIELDS                                                          \
+  X("stat", lua_stat)                                                          \
+  X("mkdir", lua_mkdir)                                                        \
+  X("cwd", lua_cwd)                                                            \
+  X("dir", iterdir)
+
 int luaopen_shutil(lua_State *L) {
 
   dir_iterator_meta(L);
   lua_newtable(L);
 
-  const struct lua_reg *ptr;
-  for (ptr = registry; ptr->func != NULL; ptr++) {
-    lua_pushcfunction(L, ptr->func);
-    lua_setfield(L, -2, ptr->name);
-  }
-
-#if __
-
+#define X(name, fp)                                                            \
+  lua_pushcfunction(L, fp);                                                    \
+  lua_setfield(L, -2, name);
+  SHUTIL_FIELDS
+#undef X
   return 1;
 }

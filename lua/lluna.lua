@@ -40,11 +40,22 @@ function lluna.pretty(t)
 	return "{ " .. table.concat(ps, ", ") .. " }"
 end
 
+function lluna.comp(...)
+	local fs = { ... }
+	return function(...)
+		local outs = { ... }
+		for _, f in ipairs(fs) do
+			outs = { f(unpack(outs)) }
+		end
+		return unpack(outs)
+	end
+end
+
 local function global()
 	local tablex = require "tablex"
 	local stringx = require "stringx"
-  local mathx = require "mathx"
-  local extend = tablex.extend
+	local mathx = require "mathx"
+	local extend = tablex.extend
 
 	extend(table, tablex)
 
@@ -53,11 +64,10 @@ local function global()
 	local string_mt = getmetatable ""
 	string_mt.__mul = string.rep
 
-  extend(math, mathx )
+	extend(math, mathx)
 
 	extend(_G, lluna)
 	extend(_G, { path = require "path" })
-
 end
 
 return setmetatable(lluna, { __call = global })

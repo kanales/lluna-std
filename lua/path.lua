@@ -41,6 +41,10 @@ function path:rmdir()
 	shutil.rmdir(tostring(self))
 end
 
+function path:stat()
+	shutil.stat(tostring(self))
+end
+
 path.__div = join
 function path:_new(...)
 	local o = {}

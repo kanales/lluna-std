@@ -172,7 +172,6 @@ function sha1:digest()
 end
 
 -- SHA256
-h:update(opad)
 local sha256 = {}
 sha256.__index = sha256
 

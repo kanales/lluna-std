@@ -1,21 +1,33 @@
-C_DIR = c 
-CFLAGS = -Wall -I/usr/local/include/luajit-2.0/
-LDFLAGS = -lluajit
+.POSIX:
+.SUFFIXES:
 
-SO_FILES = $(patsub %.so,c/$.)
+C_DIR 					= c 
+LUA_JIT_INCLUDE =	/usr/local/include/luajit-2.0/
+LUA_JIT_LIB    	= /usr/local/Cellar/luajit/2.0.5/lib
+CFLAGS					= -Wall -I$(LUA_JIT_INCLUDE)
+LDFLAGS 				= -L$(LUA_JIT_LIB)
+LDLIBS 					= 
+PREFIX 					= $(HOME)/.local
 
-.PHONY: all clean
+.PHONY: all clean install
 all: c/termios.so c/curl.so c/shutil.so
 
-c/shutil.so: src/lua_shutil.o
-	$(CC) $(LDFLAGS) --shared -fPIC -o $@ $^
-c/curl.so: src/lua_curl.o
-	$(CC) $(LDFLAGS) --shared -lcurl -fPIC -o $@ $^
-c/termios.so: src/lua_termios.o
-	$(CC) $(LDFLAGS) --shared -fPIC -o $@ $^
+install: all
+	mkdir -p 		$(DESTDIR)$(PREFIX)/share/lluna
+	cp -rf c 		$(DESTDIR)$(PREFIX)/share/lluna
+	cp -rf lua 	$(DESTDIR)$(PREFIX)/share/lluna
 
-src/%.o: src/%.c
-	$(CC) $(CFLAGS) -c -o $@ $^
+c/shutil.so: src/lua_shutil.o
+	$(CC) $(LDFLAGS) $(LDLIBS) --shared -fPIC -o $@ $^
+c/curl.so: src/lua_curl.o
+	$(CC) $(LDFLAGS) $(LDLIBS) --shared -fPIC -o $@ $^
+c/termios.so: src/lua_termios.o
+	$(CC) $(LDFLAGS) $(LDLIBS) --shared -fPIC -o $@ $^
+
+
+%.o: %.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
 
 clean:
 	$(RM) **/*.o **/*.so
