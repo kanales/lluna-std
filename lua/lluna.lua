@@ -28,6 +28,18 @@ function lluna.repr(v)
 	return tostring(v)
 end
 
+local function stringify(v)
+	local ty = type(v)
+	if ty == "function" then
+		return "function"
+	end
+	if ty == table then
+		return "table"
+	end
+
+	return tostring(v)
+end
+
 function lluna.pretty(t)
 	if type(t) ~= "table" then
 		return tostring(t)
@@ -35,7 +47,11 @@ function lluna.pretty(t)
 
 	local ps = {}
 	for k, v in pairs(t) do
-		table.insert(ps, tostring(k) .. " = " .. tostring(v))
+		if type(k) ~= "string" then
+			k = "[" .. stringify(k) .. "]"
+		end
+
+		table.insert(ps, k .. " = " .. stringify(v))
 	end
 	return "{ " .. table.concat(ps, ", ") .. " }"
 end
