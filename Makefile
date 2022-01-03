@@ -32,9 +32,10 @@ OS 							= macosx
 all: c/termios.so c/shutil.so c/socket.so c/lpeg.so
 
 install: all deps
-	mkdir -p 		$(DESTDIR)$(PREFIX)/share/lluna
-	cp -rf c 		$(DESTDIR)$(PREFIX)/share/lluna
-	cp -rf lua 	$(DESTDIR)$(PREFIX)/share/lluna
+	@echo "🚚 Installing libraries to '$(DESTDIR)$(PREFIX)/share/lluna'"
+	@mkdir -p 		$(DESTDIR)$(PREFIX)/share/lluna
+	@cp -rf c 		$(DESTDIR)$(PREFIX)/share/lluna
+	@cp -rf lua 	$(DESTDIR)$(PREFIX)/share/lluna
 
 LPEG= deps/lpeg-1.0.2
 
@@ -51,7 +52,6 @@ c/socket.so: src/lua_socket.o
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<
-
 
 clean:
 	$(RM) **/*.o **/*.so

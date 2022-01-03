@@ -77,9 +77,6 @@ local function global()
 
 	-- string extensions
 	extend(string, stringx)
-	local string_mt = getmetatable ""
-	string_mt.__mul = string.rep
-
 	extend(math, mathx)
 
 	extend(_G, lluna)
