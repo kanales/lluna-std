@@ -7,7 +7,9 @@
 #include <time.h>
 #include <unistd.h>
 
-int lua_stat(lua_State *L) {
+#include "lua_shutil.h"
+
+static int lua_stat(lua_State *L) {
   const char *path = luaL_checkstring(L, 1);
   struct stat sb;
   if (stat(path, &sb) == -1) {
@@ -27,7 +29,7 @@ int lua_stat(lua_State *L) {
   return 1;
 }
 
-int lua_rmdir(lua_State *L) {
+static int lua_rmdir(lua_State *L) {
   const char *path = luaL_checkstring(L, 1);
 
   if (rmdir(path) == -1) {
@@ -37,7 +39,7 @@ int lua_rmdir(lua_State *L) {
   return 0;
 }
 
-int lua_chdir(lua_State *L) {
+static int lua_chdir(lua_State *L) {
   const char *path = luaL_checkstring(L, 1);
 
   if (chdir(path) == -1) {
@@ -47,7 +49,7 @@ int lua_chdir(lua_State *L) {
   return 0;
 }
 
-int lua_mkdir(lua_State *L) {
+static int lua_mkdir(lua_State *L) {
   const char *path = luaL_checkstring(L, 1);
 
   if (mkdir(path, S_IRWXU) == -1) {
@@ -64,7 +66,7 @@ int lua_mkdir(lua_State *L) {
   }
   return 0;
 }
-int lua_cwd(lua_State *L) {
+static int lua_cwd(lua_State *L) {
   char buf[1024];
 
   getcwd(buf, sizeof(buf));
@@ -77,7 +79,7 @@ typedef struct dir_iterator {
   DIR *d;
 } dir_iterator;
 
-int iterdir(lua_State *L) {
+static int iterdir(lua_State *L) {
   const char *path = luaL_checkstring(L, 1);
 
   DIR *dir = opendir(path);
@@ -95,7 +97,7 @@ int iterdir(lua_State *L) {
   return 1;
 }
 
-int dir_iterator__next(lua_State *L) {
+static int dir_iterator__next(lua_State *L) {
   dir_iterator *self = lua_touserdata(L, 1);
   struct dirent *dp;
   DIR *dir = self->d;
@@ -111,7 +113,7 @@ int dir_iterator__next(lua_State *L) {
   return 0;
 }
 
-int dir_iterator__gc(lua_State *L) {
+static int dir_iterator__gc(lua_State *L) {
   dir_iterator *self = lua_touserdata(L, 1);
   if (!self->closed)
     closedir(self->d);
@@ -119,7 +121,7 @@ int dir_iterator__gc(lua_State *L) {
   return 0;
 }
 
-int dir_iterator_meta(lua_State *L) {
+static int dir_iterator_meta(lua_State *L) {
 
   luaL_newmetatable(L, "shutil.dir_iterator");
 
@@ -137,9 +139,11 @@ int dir_iterator_meta(lua_State *L) {
 
 #define SHUTIL_FIELDS                                                          \
   X("stat", lua_stat)                                                          \
+  X("rmdir", lua_rmdir)                                                        \
   X("mkdir", lua_mkdir)                                                        \
   X("cwd", lua_cwd)                                                            \
-  X("dir", iterdir)
+  X("dir", iterdir)                                                            \
+  X("cd", lua_chdir)
 
 int luaopen_shutil(lua_State *L) {
 

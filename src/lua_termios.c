@@ -4,23 +4,25 @@
 #include <termios.h>
 #include <unistd.h>
 
-void die(const char *s) {
+static void die(const char *s) {
   perror(s);
   exit(1);
 }
 
 struct termios orig_termios;
-void _disable_raw_mode() {
+static void _disable_raw_mode() {
   if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1)
     die("tcsetattr");
 }
 
-int disable_raw_mode(lua_State *L) {
+static int disable_raw_mode(lua_State *L) {
+  (void)L;
   _disable_raw_mode();
   return 0;
 }
 
-int enable_raw_mode(lua_State *L) {
+static int enable_raw_mode(lua_State *L) {
+  (void)L;
   if (tcgetattr(STDIN_FILENO, &orig_termios) == -1)
     die("tcgetattr");
   atexit(_disable_raw_mode);

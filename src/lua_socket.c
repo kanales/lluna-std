@@ -1,5 +1,4 @@
 #include <lauxlib.h>
-#include <lualib.h>
 
 #include <arpa/inet.h>  // inet_addr
 #include <netinet/in.h> // sockaddr_in
@@ -10,6 +9,8 @@
 #include <string.h> // strerror
 #include <unistd.h> // close
 
+#include "lua_socket.h"
+
 #define SOCKET_META "socket"
 
 typedef struct lsocket {
@@ -17,7 +18,7 @@ typedef struct lsocket {
   int sock_fd;
 } lsocket;
 
-lsocket *lsocket_new(lua_State *L) {
+static lsocket *lsocket_new(lua_State *L) {
   lsocket *self = lua_newuserdata(L, sizeof(lsocket));
   self->sock_fd = -1;
 
@@ -26,14 +27,14 @@ lsocket *lsocket_new(lua_State *L) {
   return self;
 }
 
-lsocket *lsocket_get(lua_State *L, int idx) {
+static lsocket *lsocket_get(lua_State *L, int idx) {
   void *ud = luaL_checkudata(L, idx, SOCKET_META);
   luaL_argcheck(L, ud != NULL, idx, "`socket` expected");
 
   return (lsocket *)ud;
 }
 
-int lsocket_open(lua_State *L) {
+static int lsocket_open(lua_State *L) {
   // Open IPv4 TCP endpoint
   // TODO allow creation of IPv6 endpoints and UDP connections
   const char *address = luaL_checkstring(L, 1);
@@ -60,7 +61,7 @@ int lsocket_open(lua_State *L) {
   return 1;
 }
 
-int lsocket_close(lua_State *L) {
+static int lsocket_close(lua_State *L) {
   lsocket *self = lsocket_get(L, 1);
 
   if (self->sock_fd != -1) {
@@ -70,9 +71,9 @@ int lsocket_close(lua_State *L) {
   return 0;
 }
 
-int lsocket__gc(lua_State *L) { return lsocket_close(L); }
+static int lsocket__gc(lua_State *L) { return lsocket_close(L); }
 
-int lsocket_listen(lua_State *L) {
+static int lsocket_listen(lua_State *L) {
   lsocket *self = lsocket_get(L, 1);
   int q = luaL_optint(L, 2, 1);
   if (listen(self->sock_fd, q) == -1) {
@@ -84,7 +85,7 @@ int lsocket_listen(lua_State *L) {
   return 0;
 }
 
-int lsocket_accept(lua_State *L) {
+static int lsocket_accept(lua_State *L) {
   lsocket *self = lsocket_get(L, 1);
   unsigned int len = sizeof(self->addr);
   lsocket *client = lsocket_new(L);
@@ -101,7 +102,7 @@ int lsocket_accept(lua_State *L) {
   return 1;
 }
 
-int lsocket_recv(lua_State *L) {
+static int lsocket_recv(lua_State *L) {
   static char buffer[4096];
   buffer[0] = '\0';
   lsocket *self = lsocket_get(L, 1);
@@ -118,7 +119,7 @@ int lsocket_recv(lua_State *L) {
   return 1;
 }
 
-int lsocket_send(lua_State *L) {
+static int lsocket_send(lua_State *L) {
   lsocket *self = lsocket_get(L, 1);
   const char *msg = luaL_checkstring(L, 2);
   int flags = luaL_optint(L, 3, 0);
