@@ -10,7 +10,7 @@ LDLIBS 					= -lluajit
 PREFIX 					= $(HOME)/.local
 
 .PHONY: all clean install
-all: c/termios.so c/curl.so c/shutil.so
+all: c/termios.so c/curl.so c/shutil.so c/socket.so
 
 install: all
 	mkdir -p 		$(DESTDIR)$(PREFIX)/share/lluna
@@ -23,7 +23,8 @@ c/curl.so: src/lua_curl.o
 	$(CC) $(LDFLAGS) $(LDLIBS) --shared -fPIC -o $@ $^
 c/termios.so: src/lua_termios.o
 	$(CC) $(LDFLAGS) $(LDLIBS) --shared -fPIC -o $@ $^
-
+c/socket.so: src/lua_socket.o
+	$(CC) $(LDFLAGS) $(LDLIBS) --shared -fPIC -o $@ $^
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<
