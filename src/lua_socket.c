@@ -35,11 +35,24 @@ static lsocket *lsocket_get(lua_State *L, int idx) {
 }
 
 static int lsocket_open(lua_State *L) {
-  // Open IPv4 TCP endpoint
-  // TODO allow creation of IPv6 endpoints and UDP connections
-  const char *address = luaL_checkstring(L, 1);
-  int port = luaL_checkint(L, 2);
+  int af = luaL_checkint(L, 1);
+  int st = luaL_checkint(L, 2);
+  int flags = luaL_optint(L, 3, IPPROTO_IP);
+
   lsocket *self = lsocket_new(L);
+  self->sock_fd = socket(af, st, flags);
+  if (self->sock_fd == -1) {
+    luaL_error(L, "Socket Creation Error: %s", strerror(errno));
+    return 0;
+  }
+
+  return 1;
+}
+
+static int lsocket_connect(lua_State *L) {
+  lsocket *self = lsocket_get(L, 1);
+  const char *address = luaL_checkstring(L, 2);
+  int port = luaL_checkint(L, 3);
 
   struct sockaddr_in *addr = &self->addr;
 
@@ -47,16 +60,32 @@ static int lsocket_open(lua_State *L) {
   addr->sin_port = htons(port);
   addr->sin_addr.s_addr = inet_addr(address);
 
-  self->sock_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-  if (self->sock_fd == -1) {
-    luaL_error(L, "Socket Creation Error: %s", strerror(errno));
+  if (connect(self->sock_fd, (struct sockaddr *)addr, sizeof(*addr)) == -1) {
+    luaL_error(L, "Connection Error: %s", strerror(errno));
     return 0;
   }
+
+  lua_settop(L, 1);
+  return 1;
+}
+
+static int lsocket_bind(lua_State *L) {
+  lsocket *self = lsocket_get(L, 1);
+  const char *address = luaL_checkstring(L, 2);
+  int port = luaL_checkint(L, 3);
+
+  struct sockaddr_in *addr = &self->addr;
+
+  addr->sin_family = AF_INET;
+  addr->sin_port = htons(port);
+  addr->sin_addr.s_addr = inet_addr(address);
+
   if (bind(self->sock_fd, (struct sockaddr *)addr, sizeof(self->addr)) == -1) {
-    close(self->sock_fd);
     luaL_error(L, "Bind Error: %s", strerror(errno));
     return 0;
   }
+
+  lua_settop(L, 1);
 
   return 1;
 }
@@ -130,20 +159,29 @@ static int lsocket_send(lua_State *L) {
   return 1;
 }
 
+#define SOCKET_FIELDS                                                          \
+  X("accept", lsocket_accept)                                                  \
+  X("close", lsocket_close)                                                    \
+  X("listen", lsocket_listen)                                                  \
+  X("recv", lsocket_recv)                                                      \
+  X("send", lsocket_send)                                                      \
+  X("connect", lsocket_connect)                                                \
+  X("bind", lsocket_bind)
+
+#define lua_pushdefine(L, idx, K)                                              \
+  lua_pushinteger(L, K);                                                       \
+  lua_setfield(L, (idx) < 0 ? (idx)-1 : (idx) + 1, #K)
+
 int luaopen_socket(lua_State *L) {
   luaL_newmetatable(L, SOCKET_META);
 
   lua_newtable(L);
-  lua_pushcfunction(L, lsocket_accept);
-  lua_setfield(L, -2, "accept");
-  lua_pushcfunction(L, lsocket_close);
-  lua_setfield(L, -2, "close");
-  lua_pushcfunction(L, lsocket_listen);
-  lua_setfield(L, -2, "listen");
-  lua_pushcfunction(L, lsocket_recv);
-  lua_setfield(L, -2, "recv");
-  lua_pushcfunction(L, lsocket_send);
-  lua_setfield(L, -2, "send");
+
+#define X(field, fun)                                                          \
+  lua_pushcfunction(L, fun);                                                   \
+  lua_setfield(L, -2, field);
+  SOCKET_FIELDS
+#undef X
 
   lua_setfield(L, -2, "__index");
 
@@ -154,6 +192,18 @@ int luaopen_socket(lua_State *L) {
 
   lua_pushcfunction(L, lsocket_open);
   lua_setfield(L, -2, "open");
+
+  // Address families
+  lua_pushdefine(L, -1, AF_UNIX);
+  lua_pushdefine(L, -1, AF_INET);
+  lua_pushdefine(L, -1, AF_INET6);
+  lua_pushdefine(L, -1, SOCK_STREAM);
+  lua_pushdefine(L, -1, SOCK_DGRAM);
+  lua_pushdefine(L, -1, SOCK_RDM);
+  lua_pushdefine(L, -1, SOCK_SEQPACKET);
+  lua_pushdefine(L, -1, IPPROTO_IP);
+  lua_pushdefine(L, -1, IPPROTO_TCP);
+  lua_pushdefine(L, -1, IPPROTO_RAW);
 
   return 1;
 }
