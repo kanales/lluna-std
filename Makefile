@@ -19,8 +19,6 @@ install: all
 
 c/shutil.so: src/lua_shutil.o
 	$(CC) $(LDFLAGS) $(LDLIBS) --shared -fPIC -o $@ $^
-c/curl.so: src/lua_curl.o
-	$(CC) $(LDFLAGS) $(LDLIBS) --shared -fPIC -o $@ $^
 c/termios.so: src/lua_termios.o
 	$(CC) $(LDFLAGS) $(LDLIBS) --shared -fPIC -o $@ $^
 c/socket.so: src/lua_socket.o
