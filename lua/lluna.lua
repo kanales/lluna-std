@@ -68,9 +68,9 @@ function lluna.comp(...)
 end
 
 local function global()
-	local tablex = require "tablex"
-	local stringx = require "stringx"
-	local mathx = require "mathx"
+	local tablex = require "lluna.tablex"
+	local stringx = require "lluna.stringx"
+	local mathx = require "lluna.mathx"
 	local extend = tablex.extend
 
 	extend(table, tablex)
@@ -80,7 +80,7 @@ local function global()
 	extend(math, mathx)
 
 	extend(_G, lluna)
-	extend(_G, { path = require "path" })
+	extend(_G, { path = require "lluna.path" })
 end
 
 return setmetatable(lluna, { __call = global })

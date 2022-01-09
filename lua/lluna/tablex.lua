@@ -17,6 +17,7 @@ local function randi(n)
 end
 
 function tablex.shuffle(t)
+	-- Fisher-Yates algorithm implementation
 	for i = #t, 2, -1 do
 		local j = randi(i)
 		t[i], t[j] = t[j], t[i]

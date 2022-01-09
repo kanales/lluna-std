@@ -25,16 +25,18 @@ function mathx.lerp(a, b, t)
 end
 function mathx.cerp(a, b, t)
 	local f = math.sqrt(1 - math.cos(t * math.pi))
-  return a * ( 1- f) + b *f
+	return a * (1 - f) + b * f
 end
 
 function mathx.wrap(x, min, max)
-  --[[
+	--[[
     mathx.wrap(x, [min,] max)
   ]]
-  if max == nil then min, max = 1, max end
-  local m = max - min + 1
-  return min + (x - min) % m
+	if max == nil then
+		min, max = 1, max
+	end
+	local m = max - min + 1
+	return min + (x - min) % m
 end
 
 return mathx
